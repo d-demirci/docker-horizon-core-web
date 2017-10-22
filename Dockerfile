@@ -10,8 +10,7 @@ RUN yum -y --setopt=tsflags=nodocs update && \
     yum -y install iplike \
                    rrdtool \
                    jrrd2 \
-                   opennms-core \
-                   opennms-webapp-jetty && \
+                   opennms-core && \
     yum clean all && \
     rm -rf /var/cache/yum && \
     rm -rf /opt/opennms/logs \
