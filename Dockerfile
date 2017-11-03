@@ -1,11 +1,11 @@
-FROM opennms/openjdk:8u144-jdk
+FROM opennms/openjdk:8u151-jdk
 
 LABEL maintainer "Ronny Trommer <ronny@opennms.org>"
 
-ARG OPENNMS_VERSION=develop
+ARG OPENNMS_VERSION=branches/features/drift
 
 RUN yum -y --setopt=tsflags=nodocs update && \
-    rpm -Uvh http://yum.opennms.org/repofiles/opennms-repo-${OPENNMS_VERSION}-rhel7.noarch.rpm && \
+    rpm -Uvh http://yum.opennms.org/repofiles/opennms-repo-branches-features-drift-rhel7.noarch.rpm && \
     rpm --import http://yum.opennms.org/OPENNMS-GPG-KEY && \
     yum -y install iplike \
                    rrdtool \
@@ -30,7 +30,7 @@ COPY ./docker-entrypoint.sh /
 ## Volumes for storing data outside of the container
 VOLUME ["/opt/opennms/etc", "/opennms-data"]
 
-HEALTHCHECK --interval=10s --timeout=3s CMD curl --fail -s -I http://localhost:8980/opennms/login.jsp | grep "HTTP/1.1 200 OK" || exit 1
+HEALTHCHECK --interval=10s --timeout=3s CMD /opt/opennms/bin/opennms status | grep -v "partially running" || exit 1
 
 LABEL license="AGPLv3" \
       org.opennms.horizon.version="${OPENNMS_VERSION}" \
