@@ -5,7 +5,8 @@
 ## Supported tags
 
 * `latest`, daily bleeding edge develop release Horizon 22
-* `21.0.0-1`, `stable`, latest stable Horizon 21
+* `21.0.1-1`, `stable`, latest stable Horizon 21
+* `21.0.0-1`, stable Horizon 21
 * `20.1.0-1`, stable Horizon 20
 * `20.0.2-1`, stable Horizon 20
 * `20.0.1-1`, stable Horizon 20
@@ -20,13 +21,19 @@
 
 ### latest
 
-* CentOS 7 with OpenJDK 8u144-jdk
+* CentOS 7 with OpenJDK 8u151-jdk
 * Official PostgreSQL 9.6.3
 * Horizon daily develop snapshot
 
+### 21.0.1-1
+
+* CentOS 7 with OpenJDK 8u151-jdk
+* Official PostgreSQL 9.6.3
+* Horizon 21.0.1-1
+
 ### 21.0.0-1
 
-* CentOS 7 with OpenJDK 8u144-jdk
+* CentOS 7 with OpenJDK 8u151-jdk
 * Official PostgreSQL 9.6.3
 * Horizon 21.0.0-1
 
