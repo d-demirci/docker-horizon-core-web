@@ -3,10 +3,11 @@ FROM opennms/openjdk:8u151-jdk
 LABEL maintainer "Ronny Trommer <ronny@opennms.org>"
 
 ARG OPENNMS_VERSION=stable
+ARG MIRROR_HOST=yum.opennms.org
 
 RUN yum -y --setopt=tsflags=nodocs update && \
-    rpm -Uvh http://yum.opennms.org/repofiles/opennms-repo-${OPENNMS_VERSION}-rhel7.noarch.rpm && \
-    rpm --import http://yum.opennms.org/OPENNMS-GPG-KEY && \
+    rpm -Uvh https://${MIRROR_HOST}/repofiles/opennms-repo-${OPENNMS_VERSION}-rhel7.noarch.rpm && \
+    rpm --import https://${MIRROR_HOST}/OPENNMS-GPG-KEY && \
     yum -y install iplike \
                    rrdtool \
                    jrrd2 \
@@ -29,9 +30,9 @@ COPY ./assets/org.apache.karaf.shell.cfg.tpl /tmp
 COPY ./docker-entrypoint.sh /
 
 ## Volumes for storing data outside of the container
-VOLUME ["/opt/opennms/etc", "/opennms-data"]
+VOLUME [ "/opt/opennms/etc", "/opt/opennms-etc-overlay", "/opennms-data" ]
 
-HEALTHCHECK --interval=10s --timeout=3s CMD curl --fail -s -I http://localhost:8980/opennms/login.jsp | grep "HTTP/1.1 200 OK" || exit 1
+HEALTHCHECK --interval=15s --timeout=5s CMD /opt/opennms/bin/opennms status | grep -v "partially running" || exit 1
 
 LABEL license="AGPLv3" \
       org.opennms.horizon.version="${OPENNMS_VERSION}" \

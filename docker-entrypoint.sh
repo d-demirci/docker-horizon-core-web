@@ -13,6 +13,7 @@ OPENNMS_HOME=/opt/opennms
 
 OPENNMS_DATASOURCES_TPL=/tmp/opennms-datasources.xml.tpl
 OPENNMS_DATASOURCES_CFG=${OPENNMS_HOME}/etc/opennms-datasources.xml
+OPENNMS_OVERLAY_CFG=/opt/opennms-etc-overlay
 
 OPENNMS_KARAF_TPL=/tmp/org.apache.karaf.shell.cfg.tpl
 OPENNMS_KARAF_CFG=${OPENNMS_HOME}/etc/org.apache.karaf.shell.cfg
@@ -26,6 +27,11 @@ E_ILLEGAL_ARGS=126
 usage() {
   echo ""
   echo "Docker entry script for OpenNMS service container"
+  echo ""
+  echo "Overlay Config file:"
+  echo "If you want to overwrite the default configuration with your custom config, you can use an overlay config"
+  echo "folder in which needs to be mounted to ${OPENNMS_OVERLAY_CFG}."
+  echo "Every file in this folder is overwriting the default configuration file in ${OPENNMS_HOME}/etc."
   echo ""
   echo "-f: Start OpenNMS in foreground with an existing configuration."
   echo "-h: Show this help."
@@ -66,23 +72,13 @@ initConfig() {
   fi
 }
 
-# to make data management easier, move all operational data to one data directory
-initData() {
-  # Create OpenNMS data directories
-  mkdir -p ${OPENNMS_DATA_DIR}/logs \
-           ${OPENNMS_DATA_DIR}/rrd/response \
-           ${OPENNMS_DATA_DIR}/rrd/snmp \
-           ${OPENNMS_DATA_DIR}/reports
-
-  # Remove symlinks and pristine empty data directories
-  rm -rf $OPENNMS_HOME/logs
-  rm -rf ${OPENNMS_HOME}/share/rrd
-  rm -rf ${OPENNMS_HOME}/share/reports
-
-  # Create links to directories which can be mounted into a data container
-  ln -s ${OPENNMS_DATA_DIR}/logs ${OPENNMS_HOME}/logs
-  ln -s ${OPENNMS_DATA_DIR}/rrd ${OPENNMS_HOME}/share/rrd
-  ln -s ${OPENNMS_DATA_DIR}/reports ${OPENNMS_HOME}/share/reports
+applyOverlayConfig() {
+  if [ "$(ls -A ${OPENNMS_OVERLAY_CFG})" ]; then
+    echo "Apply custom configuration from ${OPENNMS_OVERLAY_CFG}."
+    cp -r ${OPENNMS_OVERLAY_CFG}/* ${OPENNMS_HOME}/etc
+  else
+    echo "No custom config found in ${OPENNMS_OVERLAY_CFG}. Use default configuration."
+  fi
 }
 
 # Start opennms in foreground
@@ -102,6 +98,7 @@ fi
 while getopts fhis flag; do
   case ${flag} in
     f)
+      applyOverlayConfig
       start
       exit
       ;;
@@ -112,13 +109,13 @@ while getopts fhis flag; do
     i)
       initConfig
       initdb
-      initData
+      applyOverlayConfig
       exit
       ;;
     s)
       initConfig
       initdb
-      initData
+      applyOverlayConfig
       start
       exit
       ;;

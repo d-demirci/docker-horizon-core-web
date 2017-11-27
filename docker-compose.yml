@@ -27,7 +27,7 @@ services:
 
   opennms:
     container_name: opennms.hzn.core.web
-    image: opennms/horizon-core-web:20.1.0-1
+    image: test
     env_file:
       - .opennms.env
       - .postgres.env
@@ -38,6 +38,7 @@ services:
     volumes:
       - opennms.etc:/opt/opennms/etc
       - opennms.data:/opennms-data
+      - ./etc-overlay:/opt/opennms-etc-overlay
     command: ["-s"]
     ports:
       - "8980:8980"
