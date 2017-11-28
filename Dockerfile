@@ -32,8 +32,6 @@ COPY ./docker-entrypoint.sh /
 ## Volumes for storing data outside of the container
 VOLUME [ "/opt/opennms/etc", "/opt/opennms-etc-overlay", "/opennms-data" ]
 
-HEALTHCHECK --interval=15s --timeout=5s CMD /opt/opennms/bin/opennms status | grep -v "partially running" || exit 1
-
 LABEL license="AGPLv3" \
       org.opennms.horizon.version="${OPENNMS_VERSION}" \
       vendor="OpenNMS Community" \
