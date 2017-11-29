@@ -25,12 +25,11 @@ RUN yum -y --setopt=tsflags=nodocs update && \
     ln -s /opennms-data/reports /var/opennms/reports
 
 COPY ./assets/opennms-datasources.xml.tpl /tmp
+COPY ./assets/org.apache.karaf.shell.cfg.tpl /tmp
 COPY ./docker-entrypoint.sh /
 
 ## Volumes for storing data outside of the container
 VOLUME ["/opt/opennms/etc", "/opennms-data"]
-
-HEALTHCHECK --interval=10s --timeout=3s CMD /opt/opennms/bin/opennms status | grep -v "partially running" || exit 1
 
 LABEL license="AGPLv3" \
       org.opennms.horizon.version="${OPENNMS_VERSION}" \
