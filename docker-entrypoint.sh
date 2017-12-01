@@ -7,7 +7,6 @@
 #
 # =====================================================================
 
-START_DELAY=5
 OPENNMS_DATA_DIR=/opennms-data
 OPENNMS_HOME=/opt/opennms
 
@@ -20,8 +19,12 @@ OPENNMS_KARAF_CFG=${OPENNMS_HOME}/etc/org.apache.karaf.shell.cfg
 OPENNMS_KARAF_SSH_HOST="0.0.0.0"
 OPENNMS_KARAF_SSH_HOST="8101"
 
+OPENNMS_UPDATE_GUARD=${OPENNMS_HOME}/etc/configured
+ENFORCE_UPDATE=${OPENNMS_OVERLAY_CFG}/do-upgrade
+
 # Error codes
 E_ILLEGAL_ARGS=126
+E_DATABASE_UNAVAILABLE=127
 
 # Help function used in error messages and -h option
 usage() {
@@ -33,45 +36,42 @@ usage() {
   echo "folder in which needs to be mounted to ${OPENNMS_OVERLAY_CFG}."
   echo "Every file in this folder is overwriting the default configuration file in ${OPENNMS_HOME}/etc."
   echo ""
-  echo "-f: Start OpenNMS in foreground with an existing configuration."
+  echo "To enforce database schema and configuration updates, create a file ${OPENNMS_OVERLAY_CFG}/do-upgrade."
+  echo ""
+  echo "Note: If you run in a service stack with PostgreSQL use a service condition healthy to ensure the database is reachable."
+  echo ""
   echo "-h: Show this help."
-  echo "-i: Initialize Java environment, database and pristine OpenNMS configuration files and do *NOT* start OpenNMS."
-  echo "    The database and config file initialization is skipped when a configured file exist."
-  echo "-s: Initialize environment like -i and start OpenNMS in foreground."
+  echo "-i: Initialize Java environment, initialize or update database if necessary and do *NOT* start OpenNMS."
+  echo "-s: Same as -i but start OpenNMS in foreground."
   echo ""
 }
 
-# Initialize database and configure Karaf
-initdb() {
+# Initialize Java and startup configuration for Karaf
+initStartupConfig() {
   if [ ! -d ${OPENNMS_HOME} ]; then
-    echo "OpenNMS home directory doesn't exist in ${OPENNMS_HOME}."
+    echo "OpenNMS home directory ${OPENNMS_HOME} doesn't exist."
     exit ${E_ILLEGAL_ARGS}
   fi
 
-  # Check if the configured guard file exist
-  if [ ! -f ${OPENNMS_HOME}/etc/configured ]; then
-    envsubst < ${OPENNMS_DATASOURCES_TPL} > ${OPENNMS_DATASOURCES_CFG}
-    envsubst < ${OPENNMS_KARAF_TPL} > ${OPENNMS_KARAF_CFG}
-    cd ${OPENNMS_HOME}/bin
-    ./runjava -s
+  echo -n "Initialize configuration to access database: "
+  envsubst < ${OPENNMS_DATASOURCES_TPL} > ${OPENNMS_DATASOURCES_CFG}
+  echo "${POSTGRES_HOST}:${POSTGRES_PORT}, OpenNMS User: ${OPENNMS_DBUSER}, Postgres User: ${POSTGRES_USER}"
 
-    # Wait until the Postgres container is ready
-    sleep ${START_DELAY}
-    ./install -dis
-  else
-    echo "OpenNMS is already configured skip initdb."
-  fi
+  echo -n "Initialize Karaf Shell listen port:"
+  envsubst < ${OPENNMS_KARAF_TPL} > ${OPENNMS_KARAF_CFG}
+  echo "${OPENNMS_KARAF_SSH_HOST}:${OPENNMS_KARAF_SSH_PORT}"
 
-  echo "Remove guard file for update. To prevent schema update add a file \"${OPENNMS_OVERLAY_CFG}/configured\" in your config overlay directory."
-  rm -rf ${OPENNMS_HOME}/etc/configured
+  echo -n "Initialize Java Runtime Environment: "
+  ${OPENNMS_HOME}/bin/runjava -s
+  echo "$(cat ${OPENNMS_HOME/etc/java.conf})"
 }
 
-# In case there is no configuration, initialize with a plain config from etc-pristine
-initConfig() {
-  if [ ! "$(ls --ignore .git --ignore .gitignore --ignore ${OPENNMS_DATASOURCES_CFG} -A ${OPENNMS_HOME}/etc)"  ]; then
-    cp -r ${OPENNMS_HOME}/share/etc-pristine/* ${OPENNMS_HOME}/etc/
+initOrUpdateDb() {
+  if [ ! -f ${OPENNMS_UPDATE_GUARD} ]; then
+    echo "Initialize or update database schema."
+    ${OPENNMS_HOME}/bin/install -dis
   else
-    echo "OpenNMS configuration already initialized."
+    echo "Database is configured skip initOrUpdateDb."
   fi
 }
 
@@ -82,12 +82,16 @@ applyOverlayConfig() {
   else
     echo "No custom config found in ${OPENNMS_OVERLAY_CFG}. Use default configuration."
   fi
+
+  if [ -f ${ENFORCE_UPDATE} ]; then
+    echo "Enforce update and delete existing guard file."
+    rm -f ${OPENNMS_HOME}/etc/configured
+  fi
 }
 
 # Start opennms in foreground
 start() {
   cd ${OPENNMS_HOME}/bin
-  sleep ${START_DELAY}
   exec ./opennms -f start
 }
 
@@ -100,8 +104,10 @@ fi
 # Evaluate arguments for build script.
 while getopts fhis flag; do
   case ${flag} in
-    f)
+    s)
+      initStartupConfig
       applyOverlayConfig
+      initOrUpdateDb
       start
       exit
       ;;
@@ -110,16 +116,9 @@ while getopts fhis flag; do
       exit
       ;;
     i)
-      initConfig
-      initdb
+      initStartupConfig
       applyOverlayConfig
-      exit
-      ;;
-    s)
-      initConfig
-      initdb
-      applyOverlayConfig
-      start
+      initOrUpdateDb
       exit
       ;;
     *)
