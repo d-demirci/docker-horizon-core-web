@@ -25,8 +25,8 @@ RUN yum -y --setopt=tsflags=nodocs update && \
     ln -s /opennms-data/rrd /var/opennms/rrd && \
     ln -s /opennms-data/reports /var/opennms/reports
 
-COPY ./assets/opennms-datasources.xml.tpl /tmp
-COPY ./assets/org.apache.karaf.shell.cfg.tpl /tmp
+COPY ./assets/opennms-datasources.xml.tpl /root
+COPY ./assets/org.apache.karaf.shell.cfg.tpl /root
 COPY ./docker-entrypoint.sh /
 
 ## Volumes for storing data outside of the container

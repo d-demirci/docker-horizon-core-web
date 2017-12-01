@@ -11,11 +11,11 @@ START_DELAY=5
 OPENNMS_DATA_DIR=/opennms-data
 OPENNMS_HOME=/opt/opennms
 
-OPENNMS_DATASOURCES_TPL=/tmp/opennms-datasources.xml.tpl
+OPENNMS_DATASOURCES_TPL=/root/opennms-datasources.xml.tpl
 OPENNMS_DATASOURCES_CFG=${OPENNMS_HOME}/etc/opennms-datasources.xml
 OPENNMS_OVERLAY_CFG=/opt/opennms-etc-overlay
 
-OPENNMS_KARAF_TPL=/tmp/org.apache.karaf.shell.cfg.tpl
+OPENNMS_KARAF_TPL=/root/org.apache.karaf.shell.cfg.tpl
 OPENNMS_KARAF_CFG=${OPENNMS_HOME}/etc/org.apache.karaf.shell.cfg
 OPENNMS_KARAF_SSH_HOST="0.0.0.0"
 OPENNMS_KARAF_SSH_HOST="8101"
@@ -61,6 +61,9 @@ initdb() {
   else
     echo "OpenNMS is already configured skip initdb."
   fi
+
+  echo "Remove guard file for update. To prevent schema update add a file \"${OPENNMS_OVERLAY_CFG}/configured\" in your config overlay directory."
+  rm -rf ${OPENNMS_HOME}/etc/configured
 }
 
 # In case there is no configuration, initialize with a plain config from etc-pristine
