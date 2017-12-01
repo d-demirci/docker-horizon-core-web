@@ -111,29 +111,30 @@ The image provides the Horizon core monitoring services and the web application.
 It is recommended to use `docker-compose` to build a service stack using the official PostgreSQL images.
 In case you have already a PostgreSQL database running, you can provide the database configuration in the `.opennms.env` and `.postgres.env` environment files.
 
-The compose file uses two data container.
-They are not running and just for persisting data purposes:
+In the GitHub repository you'll find a an example docker-compose.yml file which describes a service stack with vanilla PostgreSQL and this container image.
+The data for the PostgreSQL database, OpenNMS Horizon RRD data and configuration is persisted using the local storage driver.
 
-* opennms_data: RRD/JRobin files, logs and configuration files
-* db_data: PostgreSQL database files
+## Dealing with Horizon Configuration files
 
-IMPORTANT:
-As long as you don't delete the `db_data` and `opennms_data` container you keep your data.
+To make configuration more flexible it is possible to provide a etc-overlay directory which overwrites default configuration files with your custom ones.
 
-For the reason it is required to manually edit OpenNMS configuration files, it is recommended to mount the `/opt/opennms/etc` into a local directory on your host system. In case the directory is empty it will be initialized with a plain configuration from `etc-pristine`.
+- ./etc-overlay:/opt/opennms-etc-overlay
 
 Just add the volumes directive in `docker-compose.yml` in the opennms service section:
+
 ```
 volumes:
-    - /myhost/opennms/etc:/opt/opennms/etc
+    - ./etc-overlay:/opt/opennms-etc-overlay
 ```
+
+All files in this directory will be used to overwrite the default configuration when you start up the container.
 
 ## Requirements
 
 * docker 1.11+
 * docker-compose 1.8.0+
 * git
-* optional on MacOSX, Docker environment, e.g. Kitematic, boot2docker or similar
+* optional on MacOSX or Windows a Docker environment
 
 ## Usage
 
@@ -143,22 +144,28 @@ cd docker-horizon-core-web
 docker-compose up -d
 ```
 
-The web application is exposed on TCP port 8980. You can login with default user *admin* with password *admin*.
+The web application is exposed on TCP port 8980.
+You can login with default user *admin* with password *admin*.
 Please change immediately the default password to a secure password.
 
-## Update and Maintenance
+## Start the OpenNMS Horizon Service
 
-The entrypoint script is used to control starting behavior.
+The entry point script is used to control starting behaviour.
 You can provide the following arguments in you `docker run` command or in your `docker-compose.yml`.
 
 ```
--f: Just start Horizon binary and do nothing else.
--i: Initialize database, pristine configuration files and data directory, do not start Horizon
--s: Initialize database, pristine configuration files and data directory and start Horizon
+-f: Apply existing overlay configuration and OpenNMS Horizon on foreground.
+-i: Initialise startup configuration, database, apply overlay configuration and to database schema update if necessary, do *not* start OpenNMS Horizon.
+-s: The same as `-i` but start OpenNMS Horizon afterwards, this should be the default option.
 ```
 
-In case you want to update existing configuration the configuration initialization is guarded by the `configured` file in `/opt/opennms/etc`.
-You can update the database by deleting the `configured` file and run with `-s`.
+## Update OpenNMS Horizon service
+
+OpenNMS Horizon updates can change the database schema or invalidate configuration files.
+If you want to enforce a database schema and configuration migration update, place a file "do-upgrade" in your etc-overlay configuration update.
+It will ensures the guard file `${OPENNMS_HOME}/etc/configured` gets deleted and the `install -dis` command is enforced to run.
+
+It will migrate your existing database and configuration files or give hints about configuration files which require manual merges.
 
 ## Support and Issues
 
