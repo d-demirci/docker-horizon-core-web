@@ -29,7 +29,7 @@ E_DATABASE_UNAVAILABLE=127
 # Help function used in error messages and -h option
 usage() {
   echo ""
-  echo "Docker entry script for OpenNMS service container"
+  echo "Docker entry script for OpenNMS Horizon service container"
   echo ""
   echo "Overlay Config file:"
   echo "If you want to overwrite the default configuration with your custom config, you can use an overlay config"
@@ -39,10 +39,10 @@ usage() {
   echo "To enforce database schema and configuration updates, create a file ${OPENNMS_OVERLAY_CFG}/do-upgrade."
   echo ""
   echo "Note: If you run in a service stack with PostgreSQL use a service condition healthy to ensure the database is reachable."
-  echo ""
+  echo "-f: Start OpenNMS Horizon in foreground with applied overlay configuration."
   echo "-h: Show this help."
-  echo "-i: Initialize Java environment, initialize or update database if necessary and do *NOT* start OpenNMS."
-  echo "-s: Same as -i but start OpenNMS in foreground."
+  echo "-i: Initialize Java environment, if necessary initialize/update database and apply overlay configuration and do *NOT* start OpenNMS Horizon."
+  echo "-s: Same as -i but start OpenNMS Horizon in foreground, this should be the default."
   echo ""
 }
 
@@ -104,6 +104,11 @@ fi
 # Evaluate arguments for build script.
 while getopts fhis flag; do
   case ${flag} in
+    f)
+      applyOverlayConfig
+      start
+      exit
+      ;;
     s)
       initStartupConfig
       applyOverlayConfig
