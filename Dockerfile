@@ -4,6 +4,9 @@ LABEL maintainer "Ronny Trommer <ronny@opennms.org>"
 
 ARG OPENNMS_VERSION=branches/features/drift
 
+ENV OPENNMS_KARAF_SSH_HOST 0.0.0.0
+ENV OPENNMS_KARAF_SSH_PORT 8101
+
 RUN yum -y --setopt=tsflags=nodocs update && \
     rpm -Uvh http://yum.opennms.org/repofiles/opennms-repo-branches-features-drift-rhel7.noarch.rpm && \
     rpm --import http://yum.opennms.org/OPENNMS-GPG-KEY && \
