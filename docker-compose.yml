@@ -38,6 +38,7 @@ services:
     volumes:
       - opennms.etc:/opt/opennms/etc
       - opennms.data:/opennms-data
+      - ./etc-overlay:/opt/opennms-etc-overlay
     command: ["-s"]
     healthcheck:
       test: ["CMD", "curl", "-f", "-I", "http://localhost:8980/opennms/login.jsp"]
